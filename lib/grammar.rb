@@ -1,9 +1,9 @@
-# require 'ebnf'
+require 'ebnf'
 # require 'stringio'
 
-# grammar_file = './crystal.ebnf'
+grammar_file = './crystal.ebnf'
 
-# grammar = EBNF.parse(File.open(grammar_file), format: :ebnf)
+grammar = EBNF.parse(File.open(grammar_file), format: :ebnf)
 
 
 # parser = EBNF::LL1::Parser.new(grammar)

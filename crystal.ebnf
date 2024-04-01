@@ -1,102 +1,244 @@
-StatementEnd ::= ' ' | '\r\n' | '\n' | ';' ;
+StatementEnd ::= ' ' | '\r\n' | '\n' | ';'
 
 // TODO: add keywords not followed by colon-space (do, end, else, elsif, when in, rescue, ensure, then)
-EndToken ::=  "}" | "]" | "%}" | '\0' | ;
+EndToken ::=  "}" | "]" | "%}" | '\0'
 
-Expressions ::= EndToken | ( MultiAssign StatementEnd* )+ ;
+Expressions ::= EndToken | ( MultiAssign StatementEnd* )+
 
 // TODO: Multi-assign is complicated
-MultiAssign ::= Expression ;
+MultiAssign ::= Expression
 
 // TODO: Also needs to support bracket call expressions
-MultiAssignTarget ::= Underscore | Var | InstanceVar | ClassVar | Global ;
+MultiAssignTarget ::= Underscore | Var | InstanceVar | ClassVar | Global
 
 // TODO: AssignCall is the `[]=` operator
-MultiAssignMiddle ::= Assign | AssignCall ;
+MultiAssignMiddle ::= Assign | AssignCall
 
-ExpressionSuffixNoAtomic ::= OpAssignNoControl ;
+ExpressionSuffixNoAtomic ::= OpAssignNoControl
 
-OpAssignNoControl ::= VoidExpressionKeyword | OpAssign ;
+OpAssignNoControl ::= VoidExpressionKeyword | OpAssign
 
 // TODO: Find a way to do this without the negation
-VoidExpressionKeyword ::= (Break | Next | Return) !(ColonSpace)
+VoidExpressionKeyword ::= (Break | Next | Return) // !(ColonSpace)
 
-Expression ::= OpAssign | ExpressionSuffix ;
+Expression ::= OpAssign | ExpressionSuffix
 
-ExpressionSuffix ::= IfSuffix | UnlessSuffix | RescueSuffix | EnsureSuffix ;
+ExpressionSuffix ::= IfSuffix | UnlessSuffix | RescueSuffix | EnsureSuffix
 
 // TODO: This is complex, may not be able to encapsulate fully
-OpAssign ::= QuestionColon ;
+OpAssign ::= QuestionColon
 
-QuestionColon ::= Range ( '?' QuestionColon ':' QuestionColon )? ;
+QuestionColon ::= Range ( '?' QuestionColon ':' QuestionColon )?
 
 // TODO: Range precdenece is weird
-Range ::= RangeOp | (RangeOp Or) | (Or RangeOp) | (Or RangeOp Or) ;
-RangeOp ::= '..' | '...' ;
+Range ::= RangeOp | (RangeOp Or) | (Or RangeOp) | (Or RangeOp Or)
+RangeOp ::= '..' | '...'
 
-Or ::= And ( "||" And )? ;
-And ::= Equality ( "&&" Equality )? ;
-Equality ::= Cmp ( ( '<' | '<=' | '>' | '>=' | '<=>' ) Cmp )? ;
-Cmp ::= LogicalOr ( ( '==' | '!=' | '=~' | '!~' | '===') LogicalOr )? ;
-LogicalOr ::= LogicalAnd ( ( '^' | '|' ) LogicalAnd )? ;
-LogicalAnd ::= Shift ( '&' LogicalAnd )? ;
-Shift ::= AddOrSub ( ( '<<' | '>>' ) AddOrSub )? ;
+Or ::= And ( "||" And )?
+And ::= Equality ( "&&" Equality )?
+Equality ::= Cmp ( ( '<' | '<=' | '>' | '>=' | '<=>' ) Cmp )?
+Cmp ::= LogicalOr ( ( '==' | '!=' | '=~' | '!~' | '===') LogicalOr )?
+LogicalOr ::= LogicalAnd ( ( '^' | '|' ) LogicalAnd )?
+LogicalAnd ::= Shift ( '&' LogicalAnd )?
+Shift ::= AddOrSub ( ( '<<' | '>>' ) AddOrSub )?
 
 // TODO: May be missing something here
-AddOrSub ::= MulOrDiv ( ( '+' | '-' | '&+' | '&-' ) MulOrDiv )* ;
+AddOrSub ::= MulOrDiv ( ( '+' | '-' | '&+' | '&-' ) MulOrDiv )*
 
-MulOrDiv ::= Pow ( ( '*' | '/' | '//' | '%' | '&*' ) Pow )? ;
+MulOrDiv ::= Pow ( ( '*' | '/' | '//' | '%' | '&*' ) Pow )?
 
 // NOTE: Pow is right associative
-Pow ::= Prefix ( ( '**' | '&**' ) Pow )? ;
+Pow ::= Prefix ( ( '**' | '&**' ) Pow )?
 
-Prefix ::= ( PrefixOp Prefix? )? AtomicWithMethod ;
-PrefixOp ::= '!' | '+' | '-' | '~' | '&+' | '&-' ;
+Prefix ::= ( PrefixOp Prefix? )? AtomicWithMethod
+PrefixOp ::= '!' | '+' | '-' | '~' | '&+' | '&-'
 
-AtomicWithMethod ::= Atomic AtomicMethodSuffix ;
+AtomicWithMethod ::= Atomic AtomicMethodSuffix
 
 // TODO: Complex
-AtomicMethodSuffix ::= ;
+AtomicMethodSuffix ::= ''
 
-Atomic ::= ParenthesizedExpression | EmptyArrayLiteral | ArrayLiteral |
-  HashOrTupleLiteral | PercentMacroExpression | PercentMacroControl |
-  GenericOrGlobalCall | FunLiteral | Annotation | Number | Char |
-  Delimiter | StringArray | SymbolArray | Symbol | OpDollar | GlobalMatchDataIndex |
-  MagicLine | MagicEndLine | MagicFile | MagicDir | Ident | Const | InstanceVar |
-  ClassVar | Underscore ;
+Atomic ::= ParenthesizedExpression | EmptyArrayLiteral | ArrayLiteral | HashOrTupleLiteral | PercentMacroExpression | PercentMacroControl | GenericOrGlobalCall | FunLiteral | Annotation | Number | Char | String | Delimiter | StringArray | SymbolArray | Symbol | OpDollar | GlobalMatchDataIndex | Magic | Keyword | Ident | Const | InstanceVar | ClassVar | Underscore
 
 // List literals
 
-ParenthesizedExpression ::= "(" Expression ( ( '\n' | ';' ) Expression ) ")" ;
+ParenthesizedExpression ::= "(" Expression ( ( '\n' | ';' ) Expression ) ")"
 
-EmptyArrayLiteral ::= "[]" "of" BareProcType ;
-ArrayLiteral ::= "[" ( OpAssignNoControl "," )* OpAssignNoControl "]" ( "of" BareProcType )? ;
+EmptyArrayLiteral ::= "[]" "of" BareProcType
+ArrayLiteral ::= "[" ( OpAssignNoControl "," )* OpAssignNoControl "]" ( "of" BareProcType )?
 
-HashOrTupleLiteral ::=
-  "{" ( NamedTupleLiteral | HashLiteral | TupleLiteral ) "}"
-  ( "of" BareProcType "=>" BareProcType )? ;
+HashOrTupleLiteral ::= "{" ( NamedTupleLiteral | HashLiteral | TupleLiteral ) "}" ( "of" BareProcType "=>" BareProcType )?
 
 // TODO: splats
-NamedTupleLiteral ::= NamedTuple OpAssign ( "," NamedTuple OpAssignNoControl )* ;
-HashLiteral ::= OpAssignNoControl "=>" OpAssignNoControl ( "," OpAssignNoControl "=>" OpAssignNoControl )* ;
-TupleLiteral ::= OpAssignNoControl ( "," OpAssignNoControl )* ;
+NamedTupleLiteral ::= NamedTuple OpAssign ( "," NamedTuple OpAssignNoControl )*
+HashLiteral ::= OpAssignNoControl "=>" OpAssignNoControl ( "," OpAssignNoControl "=>" OpAssignNoControl )*
+TupleLiteral ::= OpAssignNoControl ( "," OpAssignNoControl )*
 
 // TODO: There can't be a space between the ident/const and the colon, and there can't be another colon following
-NamedTuple ::= ( Ident | Const ) ':' ;
+NamedTuple ::= ( Ident | Const ) ':'
 
 // Macros
 
-PercentMacroExpression ::= "{{" MacroExpression "}}" ;
-MacroExpression ::= ( "**" | "*" )? Expression ;
+PercentMacroExpression ::= "{{" MacroExpression "}}"
+MacroExpression ::= ( "**" | "*" )? Expression
 
-PercentMacroControl ::= "{%" "%}" ;
-MacroControl ::= MacroFor | MacroIf | MacroBegin | MacroElse | MacroElsif | MacroEnd | MacroVerbatim | Expressions ;
+PercentMacroControl ::= "{%" "%}"
+MacroControl ::= MacroFor | MacroIf | MacroBegin | MacroElse | MacroElsif | MacroEnd | MacroVerbatim | Expressions
 
-MacroFor ::= "for" ( Underscore | Ident ( "," ( Underscore | Ident ) )* ) "in" ExpressionInsideMacro
+MacroFor ::= "for" ( ( Underscore | Ident ) ( "," ( Underscore | Ident ) )* ) "in" ExpressionInsideMacro
 
-MacroElse ::= 'else' ;
-MacroElsif ::= 'elsif' ;
-MacroEnd ::= 'end' ;
+MacroElse ::= 'else'
+MacroElsif ::= 'elsif'
+MacroEnd ::= 'end'
 
 // TODO:
-MacroBody ::= ;
+MacroBody ::= ''
+
+GenericOrGlobalCall ::= VarOrCall | ( Generic CustomLiteral )
+VarOrCall ::= ( NegationSuffix | IsAQuestion | As | AsQuestion | RespondsToQuestion | NilQuestion ) | ( Ident | CallArgs )
+
+IsAQuestion ::= "is_a?" ( "(" BareProcType ")" | UnionType )
+As ::= "as" ( "(" BareProcType ")" | UnionType )
+AsQuestion ::= "as?" ( "(" BareProcType ")" | UnionType )
+RespondsToQuestion ::= "responds_to?" ( "(" RespondsToName ")" | RespondsToName )
+RespondsToName ::= Symbol
+NilQuestion ::= "nil?" ( "(" ")" )?
+NegationSuffix ::= "!" ( "(" ")" )?
+
+// TODO:
+CallArgs ::= ''
+
+FunLiteral ::= "->" ( "(" FunLiteralParam ( "," FunLiteralParam )* ")" )? ( ":" BareProcType )? ( DoEndBlock | CurlyBlock )
+FunLiteralParam ::= Ident ( ":" BareProcType )?
+
+CurlyBlock ::= "{" Expressions "}"
+DoEndBlockNoArgs ::= "do" Expressions ExceptionHandler "end"
+DoEndBlock ::= "do" ( "|" Ident ("," Ident)* "|" )? Expressions ExceptionHandler "end"
+ExceptionHandler ::= Rescue* ( "else" Expressions )? ( "ensure" Expressions )?
+Rescue ::= "rescue" ( ( Ident ( ":" RescueTypes )? ) | ( ( Const | "::" ) RescueTypes ) ) ( ';' | '\n' ) Expressions
+RescueTypes ::= Generic ( '|' Generic )*
+
+Annotation ::= "@[" Path ( "(" ( CallArgs | NamedArgs | ( CallArgs "," NamedArgs ) )? ")" )? "]"
+
+Number ::= ( "0b" [0-1] ( [0-1] | "_" )* ) | ( "0o" [0-7] ( [0-7] | "_" )* ) | ( "0x" ( [0-9] | [A-F] ) ( [0-9] | [A-F] | "_" )* ) | ( [0-9] ( [0-9] | "_" )* ( '.' [0-9]+ )? ( "e" [0-9]+ )? NumberSuffix? )
+NumberSuffix ::= ( ( ( 'i' | 'u' ) ( '8' | '16' | '32' | '64' | '128' ) ) | ( 'f' ( '32' | '64' ) ) )
+
+Char ::= "'" ( ( "\" ( '\' | "'" | 'a' | 'b' | 'e' | 'f' | 'n' | 'r' | 't' | 'v' | CharUnicodeEscape | '0' ) ) ) "'"
+
+// TODO: this is in the lexer
+CharUnicodeEscape ::= 'u'
+
+// TODO: allow anything except for unescaped end quotes
+String ::= '"' '"'
+
+Delimiter ::= Regex | ( ( '%' | '%q' | '%Q' | '%r' | '%x' ) DelimitedPair )
+
+// TODO: allow any chars except for closing char between pairs
+DelimitedPair ::= ( "(" ")" ) | ( "[" "]" ) | ( "{" "}" ) | ( "<" ">" ) | ( "|" "|" )
+
+// TODO: this is complex
+StringArray ::= '%w' DelimitedPair
+SymbolArray ::= '%i' DelimitedPair
+
+// TODO: string symbols and no space between ':' and identifier
+Symbol ::= ( ':+' | ':-' | ':**' | ':*' | '://' | ':/' | ':===' | ':==' | ':=~' | ':!=' | ':!~' | ':!' | ':<=>' | ':<=' | ':<<' | ':<' | ':>=' | ':>>' | ':>' | ':&+' | ':&-' | ':&**' | ':&*' | ':&' | ':|' | ':^' | ':~' | ':%' | ':[]=' | ':[]?' | ':[]' | ( ':"'  '"' ) | ( ':' Ident ( '?' | '!' | '=' )? ) )
+
+Magic         ::= MagicLine | MagicDir | MagicEndLine | MagicFile
+MagicLine     ::= '__LINE__'
+MagicDir      ::= '__DIR__'
+MagicEndLine  ::= '__END_LINE__'
+MagicFile     ::= '__FILE__'
+
+OpDollar ::= '$~' | '$?'
+InstanceVar ::= '@' Ident
+ClassVar ::= '@@' Ident
+
+// TODO: allow chars with ords larger than 0x9F
+Ident ::= ( [a-zA-Z] | "_" ) ( [a-zA-Z0-9] | "_" )*
+Underscore ::= '_'
+
+Keyword ::= Begin | NilLiteral | TrueLiteral | FalseLiteral | Yield | With | Abstract | Def | Macro | Require | Case | Select | If | Unless | Include | Extend | ClassDef | StructDef | ModuleDef | Enum | While | Until | Return | Next | Break | Lib | FunDef | Alias | Pointerof | Sizeof | InstanceSizeof | Alignof | Offsetof | Typeof | Private | Protected | Asm | Annotation
+
+Begin ::= "begin" Expressions ExceptionHandler "end"
+NilLiteral ::= "nil"
+TrueLiteral ::= "true"
+FalseLiteral ::= "false"
+Yield ::= "yield" CallArgs
+With ::= "with" Assign Yield
+Abstract ::= "abstract" ( AbstractDef | ClassDef | StructDef )
+
+Def ::= AbstractDef Expressions ExceptionHandler "end"
+AbstractDef ::= ( DefOrMacroName | Path ) ( '.' DefOrMacroName )? '='? ( '(' Param ( ',' Param )* ')' )? ( ":" BareProcType )? ( "forall" DefFreeVars )?
+
+DefOrMacroName ::= ( Ident | Const | '`' | '<<' | '<' | '<=>' | '<=' | '===' | '==' | '!=' | '=~' | '!~' | '>>' | '>' | '+' | '-' | '**' | '*' | '/' | '//' | '!' | '~' | '%' | '&' | '|' | '^' | '[]' | '[]=' | '[]?' | '&+' | '&-' | '&**' | '&*' )
+Param ::= Annotation? ( ( '&' DefBlockParam ) | ( ( ( '**' | '*' ) ( ParamName ( ':' BareProcType )? )? ) | ( ( '**' | '*' )? ParamName ( ':' BareProcType )? ( '=' ( Magic | Assign ) )? ) ) )
+
+ClassDef ::= "class" ClassOrStruct
+StructDef ::= "struct" ClassOrStruct
+ClassOrStruct ::= Path TypeVars? ( '<' ( 'self' | Generic ) )? Expressions "end"
+
+ModuleDef ::= "module" Path TypeVars? Expressions "end"
+
+TypeVars ::= ( '(' '*'? Const ( ',' '*' Const )* ')' )
+
+// TODO: no interpolation on string
+Require ::= "require" String
+
+Case ::= "case" OpAssignNoControl? ( ( "when" | "in" ) ( CaseTuple | WhenExpression ) WhenExpressionEnd Expressions )* ( "else" Expressions )? "end"
+CaseTuple ::= "{" WhenExpression ( ',' WhenExpression )* "}"
+WhenExpression ::= ( '.' VarOrCall ) | ( OpAssignNoControl )
+WhenExpressionEnd ::= "then" | ( ',' | '\n' | ';' )+
+
+Select ::= "select" ( "when" WhenExpression WhenExpressionEnd Expressions )* ( "else" Expressions ) "end"
+
+If ::= "if" OpAssignNoControl Expressions ( "elsif" OpAssignNoControl Expressions )* ( "else" Expressions )? "end"
+Unless ::= "unless" OpAssignNoControl Expressions ( "else" OpAssignNoControl )? "end"
+
+Include ::= "include" ( "self" | Generic )
+Extend  ::= "extend" ( "self" | Generic )
+
+Enum ::= "enum" Path ( ":" BareProcType )? EnumBodyExpressions "end"
+EnumBodyExpressions ::= ( ( Const ( '=' LogicalOr )? ) | ( ( Private | Protected ) ( Def | Macro ) ) | ( ClassVar '=' OpAssign ) | PercentMacroExpression | PercentMacroControl | Annotation )*
+
+While ::= "while" WhileOrUntil
+Until ::= "until" WhileOrUntil
+WhileOrUntil ::= OpAssignNoControl Expressions "end"
+
+Return  ::= "return" CallArgs
+Next    ::= "next" CallArgs
+Break   ::= "break" CallArgs
+
+Lib ::= "lib" Path LibBodyExpressions "end"
+LibBodyExpressions ::= LibBodyExp*
+LibBodyExp ::= Annotation | Alias | FunDef | Type | CStruct | CUnion | Enum | ( Path '=' Expression ) | ( Global '='? ':' BareProcType ) | PercentMacroControl | PercentMacroExpression
+
+// NOTE: the Crystal parser has a parameter for allowing a body in fun defs, not implementing as it's not used
+FunDef ::= "fun" ( Ident | Const ) ( '=' ( Ident | Const | StringNoInterp ) )? ( '(' ( '...' | ( Ident ':' BareProcType ( ',' Ident ':' BareProcType )* ) ) ')' )? ( ':' BareProcType )?
+
+Alias ::= "alias" Path '=' BareProcType
+
+Pointerof       ::= "pointerof" '(' OpAssign ')'
+Sizeof          ::= "sizeof" '(' BareProcType ')'
+InstanceSizeof  ::= "instance_sizeof" '(' BareProcType ')'
+Alignof         ::= "alignof" '(' BareProcType ')'
+Offsetof        ::= "offsetof" '(' BareProcType ',' ( InstanceVar | Number ) ')'
+Typeof          ::= "typeof" '(' OpAssign ( ',' OpAssign )* ')'
+
+Private ::= "private" OpAssign
+Protected ::= "protected" OpAssign
+
+// NOTE: this is a simplification as parsing requires context
+Asm         ::= "asm" '(' StringNoInterp ( ( '::' | ':' ) ( AsmOperands | AsmClobbers | AsmOptions ) ) ')'
+AsmOperands ::= AsmOperand ( ',' AsmOperand )*
+AsmOperand  ::= StringNoInterp '(' Expression ')'
+AsmClobbers ::= StringNoInterp ( ',' StringNoInterp )*
+AsmOptions  ::= AsmOption ( ',' AsmOption )*
+AsmOption   ::= '"volatile"' | '"alignstack"' | '"intel"' | '"unwind"'
+
+BareProcType ::= UnionType | ( '*'? UnionType ( ',' '*'? UnionType )* ProcTypeOutput )
+UnionType ::= AtomicTypeWithSuffix ( '|' AtomicTypeWithSuffix )
+AtomicTypeWithSuffix ::= AtomicType TypeSuffix
+ProcTypeOutput ::= '->' UnionType?
+
+// TODO: more cases exist here
+AtomicType ::= ( "self" | "self?" | Typeof ) | Underscore | Generic | NamedTypeArgs | UnionTypes | ProcTypeOutput | ( '(' '*'? UnionType ')' ProcTypeOutput ) | ( '(' '*'? UnionType ( ',' UnionType ) ','? ')' )
