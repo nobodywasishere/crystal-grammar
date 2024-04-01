@@ -1,3 +1,102 @@
-# comment
-hello ::= 'world'
-goodbye ::= hello | 'cheese'
+StatementEnd ::= ' ' | '\r\n' | '\n' | ';' ;
+
+// TODO: add keywords not followed by colon-space (do, end, else, elsif, when in, rescue, ensure, then)
+EndToken ::=  "}" | "]" | "%}" | '\0' | ;
+
+Expressions ::= EndToken | ( MultiAssign StatementEnd* )+ ;
+
+// TODO: Multi-assign is complicated
+MultiAssign ::= Expression ;
+
+// TODO: Also needs to support bracket call expressions
+MultiAssignTarget ::= Underscore | Var | InstanceVar | ClassVar | Global ;
+
+// TODO: AssignCall is the `[]=` operator
+MultiAssignMiddle ::= Assign | AssignCall ;
+
+ExpressionSuffixNoAtomic ::= OpAssignNoControl ;
+
+OpAssignNoControl ::= VoidExpressionKeyword | OpAssign ;
+
+// TODO: Find a way to do this without the negation
+VoidExpressionKeyword ::= (Break | Next | Return) !(ColonSpace)
+
+Expression ::= OpAssign | ExpressionSuffix ;
+
+ExpressionSuffix ::= IfSuffix | UnlessSuffix | RescueSuffix | EnsureSuffix ;
+
+// TODO: This is complex, may not be able to encapsulate fully
+OpAssign ::= QuestionColon ;
+
+QuestionColon ::= Range ( '?' QuestionColon ':' QuestionColon )? ;
+
+// TODO: Range precdenece is weird
+Range ::= RangeOp | (RangeOp Or) | (Or RangeOp) | (Or RangeOp Or) ;
+RangeOp ::= '..' | '...' ;
+
+Or ::= And ( "||" And )? ;
+And ::= Equality ( "&&" Equality )? ;
+Equality ::= Cmp ( ( '<' | '<=' | '>' | '>=' | '<=>' ) Cmp )? ;
+Cmp ::= LogicalOr ( ( '==' | '!=' | '=~' | '!~' | '===') LogicalOr )? ;
+LogicalOr ::= LogicalAnd ( ( '^' | '|' ) LogicalAnd )? ;
+LogicalAnd ::= Shift ( '&' LogicalAnd )? ;
+Shift ::= AddOrSub ( ( '<<' | '>>' ) AddOrSub )? ;
+
+// TODO: May be missing something here
+AddOrSub ::= MulOrDiv ( ( '+' | '-' | '&+' | '&-' ) MulOrDiv )* ;
+
+MulOrDiv ::= Pow ( ( '*' | '/' | '//' | '%' | '&*' ) Pow )? ;
+
+// NOTE: Pow is right associative
+Pow ::= Prefix ( ( '**' | '&**' ) Pow )? ;
+
+Prefix ::= ( PrefixOp Prefix? )? AtomicWithMethod ;
+PrefixOp ::= '!' | '+' | '-' | '~' | '&+' | '&-' ;
+
+AtomicWithMethod ::= Atomic AtomicMethodSuffix ;
+
+// TODO: Complex
+AtomicMethodSuffix ::= ;
+
+Atomic ::= ParenthesizedExpression | EmptyArrayLiteral | ArrayLiteral |
+  HashOrTupleLiteral | PercentMacroExpression | PercentMacroControl |
+  GenericOrGlobalCall | FunLiteral | Annotation | Number | Char |
+  Delimiter | StringArray | SymbolArray | Symbol | OpDollar | GlobalMatchDataIndex |
+  MagicLine | MagicEndLine | MagicFile | MagicDir | Ident | Const | InstanceVar |
+  ClassVar | Underscore ;
+
+// List literals
+
+ParenthesizedExpression ::= "(" Expression ( ( '\n' | ';' ) Expression ) ")" ;
+
+EmptyArrayLiteral ::= "[]" "of" BareProcType ;
+ArrayLiteral ::= "[" ( OpAssignNoControl "," )* OpAssignNoControl "]" ( "of" BareProcType )? ;
+
+HashOrTupleLiteral ::=
+  "{" ( NamedTupleLiteral | HashLiteral | TupleLiteral ) "}"
+  ( "of" BareProcType "=>" BareProcType )? ;
+
+// TODO: splats
+NamedTupleLiteral ::= NamedTuple OpAssign ( "," NamedTuple OpAssignNoControl )* ;
+HashLiteral ::= OpAssignNoControl "=>" OpAssignNoControl ( "," OpAssignNoControl "=>" OpAssignNoControl )* ;
+TupleLiteral ::= OpAssignNoControl ( "," OpAssignNoControl )* ;
+
+// TODO: There can't be a space between the ident/const and the colon, and there can't be another colon following
+NamedTuple ::= ( Ident | Const ) ':' ;
+
+// Macros
+
+PercentMacroExpression ::= "{{" MacroExpression "}}" ;
+MacroExpression ::= ( "**" | "*" )? Expression ;
+
+PercentMacroControl ::= "{%" "%}" ;
+MacroControl ::= MacroFor | MacroIf | MacroBegin | MacroElse | MacroElsif | MacroEnd | MacroVerbatim | Expressions ;
+
+MacroFor ::= "for" ( Underscore | Ident ( "," ( Underscore | Ident ) )* ) "in" ExpressionInsideMacro
+
+MacroElse ::= 'else' ;
+MacroElsif ::= 'elsif' ;
+MacroEnd ::= 'end' ;
+
+// TODO:
+MacroBody ::= ;
